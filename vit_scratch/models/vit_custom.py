@@ -54,11 +54,11 @@ class AttentionBlock(torch.nn.Module):
         super().__init__(*args, **kwargs)
         self.latent_dim = latent_dim
         # Query
-        self.q = torch.nn.Linear(self.latent_dim, self.latent_dim)
+        self.q = torch.nn.Linear(self.latent_dim, self.latent_dim, bias=False)
         # Key
-        self.k = torch.nn.Linear(self.latent_dim, self.latent_dim)
+        self.k = torch.nn.Linear(self.latent_dim, self.latent_dim, bias=False)
         # Value
-        self.v = torch.nn.Linear(self.latent_dim, self.latent_dim)
+        self.v = torch.nn.Linear(self.latent_dim, self.latent_dim, bias=False)
 
     def forward(self, x):
         # Compute Q, K, V
@@ -86,7 +86,9 @@ class MultiHeadAttentionBlock(torch.nn.Module):
         self.n_heads = n_heads
         self.latent_dim = latent_dim
         # List of heads
-        self.heads = [AttentionBlock(self.latent_dim) for _ in range(self.n_heads)]
+        self.heads = torch.nn.ModuleList(
+            [AttentionBlock(self.latent_dim) for _ in range(self.n_heads)]
+        )
         # Projection layer
         self.projection = torch.nn.Linear(self.latent_dim * self.n_heads, self.latent_dim, bias=False)
 
