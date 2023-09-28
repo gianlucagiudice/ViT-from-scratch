@@ -15,7 +15,7 @@ def main(
         n_heads: int = 8,
         max_epochs: int = 100,
         early_stopping_patience: int = 15,
-        accelerator: str = 'mps'
+        accelerator: str = 'auto'
 ):
     fashion_mnist = FashionMNISTDataModule(data_dir, batch_size)
     fashion_mnist.prepare_data()
