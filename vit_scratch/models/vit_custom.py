@@ -1,10 +1,13 @@
-from typing import Tuple
+from typing import Tuple, Optional
+
+import torch
+from torch import nn as nn
 
 from vit_scratch.models.base_model import BaseModel
-import torch
+from vit_scratch.models.config import ViTConfig
 
 
-class VitEmbeddingLayer(torch.nn.Module):
+class ViTEmbeddingLayer(torch.nn.Module):
     def __init__(
             self,
             sequence_length: int,
@@ -170,28 +173,20 @@ class TransformerEncoder(torch.nn.Module):
 
 class ViTNetwork(torch.nn.Module):
 
-    def __init__(
-            self,
-            input_shape: Tuple[int, int, int],
-            patch_size: int,
-            latent_dim: int,
-            n_layers: int,
-            n_heads: int,
-            n_classes: int,
-    ):
+    def __init__(self, vit_config: ViTConfig):
         super().__init__()
-        self.input_shape = input_shape
-        self.patch_size = patch_size
-        self.latent_dim = latent_dim
-        self.n_layers = n_layers
-        self.n_heads = n_heads
+        self.input_shape = vit_config.input_shape
+        self.patch_size = vit_config.patch_size
+        self.latent_dim = vit_config.latent_dim
+        self.n_layers = vit_config.n_layers
+        self.n_heads = vit_config.n_heads
         self.n_classes = n_classes
         # Compute sequence length
         self.sequence_length = self._sequence_length_factory(self.input_shape, self.patch_size)
         # Get number of channels
         self.n_channels = self.input_shape[0]
         # Network layers
-        self.embeddings_layer: torch.nn.Module = VitEmbeddingLayer(
+        self.embeddings_layer: torch.nn.Module = ViTEmbeddingLayer(
             sequence_length=self.sequence_length,
             latent_dim=self.latent_dim,
             n_channels=self.n_channels,
@@ -225,9 +220,9 @@ class ViTNetwork(torch.nn.Module):
         # Permute tensor: B x C x Size x Stride x P x P ---> B x Size x Stride x P x P x C
         x = x.permute(0, 2, 3, 4, 5, 1)
         # Unroll tensor: B x Size x Stride x P x P x C ---> B x Size x Stride x P * P * C
-        x = x.reshape(b, size, stride, p**2 * c)
+        x = x.reshape(b, size, stride, p ** 2 * c)
         # Flatten the tensor
-        x = x.reshape(b, size * stride, p**2 * c)
+        x = x.reshape(b, size * stride, p ** 2 * c)
         # Return the final tensor after patchify() and flatten()
         return x
 
@@ -247,41 +242,29 @@ class ViTNetwork(torch.nn.Module):
 
 
 class ViTCustom(BaseModel):
-    def __init__(
-            self,
-            input_shape: Tuple[int, int, int],
-            patch_size: int,
-            latent_dim: int,
-            n_layers: int,
-            n_heads: int,
-            n_classes: int,
-            *args, **kwargs
-    ):
-        vit_network = ViTNetwork(
-            input_shape=input_shape,
-            patch_size=patch_size,
-            latent_dim=latent_dim,
-            n_layers=n_layers,
-            n_heads=n_heads,
-            n_classes=n_classes,
-        )
-        super().__init__(vit_network, n_classes, *args, **kwargs)
+
+    def __init__(self, model: nn.Module, learning_rate: Optional[float], *args, **kwargs):
+        super().__init__(model, learning_rate, *args, **kwargs)
 
 
 if __name__ == '__main__':
-    input_shape = (1, 28, 28)
     n_classes = 10
-    vit_net = ViTNetwork(
-        input_shape=input_shape,
+    batch_size = 10
+
+    # Create a ViT config
+    vit_config = ViTConfig(
+        input_shape=(1, 28, 28),
         patch_size=7,
         latent_dim=32,
         n_layers=4,
         n_heads=3,
-        n_classes=n_classes
+        n_classes=n_classes,
     )
+    # Create a ViT network
+    vit_net = ViTNetwork(vit_config)
+
     # Crete a dummy input
-    batch_size = 10
-    dummy_input = torch.rand(batch_size, *input_shape)
+    dummy_input = torch.rand(batch_size, *vit_config.input_shape)
     # Feed the input into the network
     x = vit_net(dummy_input)
     # Result shape

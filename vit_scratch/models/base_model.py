@@ -1,25 +1,19 @@
 from abc import abstractmethod, ABC
+from typing import Optional
 
+import pytorch_lightning as pl
 import torch
 import torch.nn as nn
-import pytorch_lightning as pl
 
 
 class BaseModel(pl.LightningModule, ABC):
 
     @abstractmethod
-    def __init__(
-            self,
-            model: nn.Module,
-            num_classes: int,
-            learning_rate: float = 0.001,
-            *args, **kwargs
-    ):
+    def __init__(self, model: nn.Module, learning_rate: Optional[float], *args, **kwargs):
         super().__init__()
         # Set the model
         self.model = model
-        # Save hyperparameters
-        self.save_hyperparameters(ignore=['model'])
+        self.learning_rate = learning_rate
 
     def forward(self, x):
         return self.model(x)
@@ -45,5 +39,6 @@ class BaseModel(pl.LightningModule, ABC):
         return loss
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=self.hparams.learning_rate)
-
+        if self.learning_rate is None:
+            raise ValueError('Learning rate must be set')
+        return torch.optim.Adam(self.parameters(), lr=self.learning_rate)
