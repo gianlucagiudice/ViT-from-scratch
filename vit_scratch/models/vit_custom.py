@@ -1,9 +1,7 @@
-from typing import Tuple, Optional
+from typing import Tuple
 
 import torch
-from torch import nn as nn
 
-from vit_scratch.models.base_model import BaseModel
 from vit_scratch.models.config import ViTConfig
 
 
@@ -180,7 +178,7 @@ class ViTNetwork(torch.nn.Module):
         self.latent_dim = vit_config.latent_dim
         self.n_layers = vit_config.n_layers
         self.n_heads = vit_config.n_heads
-        self.n_classes = n_classes
+        self.n_classes = vit_config.n_classes
         # Compute sequence length
         self.sequence_length = self._sequence_length_factory(self.input_shape, self.patch_size)
         # Get number of channels
@@ -239,12 +237,6 @@ class ViTNetwork(torch.nn.Module):
         x = self.mlp_classification_head(x)
         # Return the logits
         return x
-
-
-class ViTCustom(BaseModel):
-
-    def __init__(self, model: nn.Module, learning_rate: Optional[float], *args, **kwargs):
-        super().__init__(model, learning_rate, *args, **kwargs)
 
 
 if __name__ == '__main__':

@@ -1,6 +1,12 @@
+import enum
 from abc import ABC
 from dataclasses import dataclass
 from typing import Tuple
+
+
+class ModelType(enum.Enum):
+    resnet_baseline: str = 'resnet_baseline'
+    vit_custom: str = 'vit_custom'
 
 
 @dataclass

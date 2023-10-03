@@ -2,10 +2,9 @@ import lightning.pytorch as pl
 import numpy as np
 import torch
 from torch.utils.data import random_split, DataLoader
-
+from torchvision import transforms
 # Note - you must have torchvision installed for this example
 from torchvision.datasets import FashionMNIST
-from torchvision import transforms
 
 
 class FashionMNISTDataModule(pl.LightningDataModule):

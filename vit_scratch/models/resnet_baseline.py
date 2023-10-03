@@ -1,9 +1,5 @@
-from typing import Optional
-
 import torch
-from torch import nn as nn
 
-from vit_scratch.models.base_model import BaseModel
 from vit_scratch.models.config import ResnetBaselineConfig
 
 
@@ -29,8 +25,3 @@ class ResnetBaselineNetwork(torch.nn.Module):
 
     def forward(self, x):
         return self.resnet(x)
-
-
-class ResnetBaseline(BaseModel):
-    def __init__(self, model: nn.Module, learning_rate: Optional[float], *args, **kwargs):
-        super().__init__(model, learning_rate, *args, **kwargs)

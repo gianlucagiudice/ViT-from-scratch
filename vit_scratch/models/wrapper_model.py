@@ -1,4 +1,4 @@
-from abc import abstractmethod, ABC
+from abc import abstractmethod
 from typing import Optional
 
 import pytorch_lightning as pl
@@ -6,14 +6,21 @@ import torch
 import torch.nn as nn
 
 
-class BaseModel(pl.LightningModule, ABC):
+class ModelWrapper(pl.LightningModule):
 
     @abstractmethod
-    def __init__(self, model: nn.Module, learning_rate: Optional[float], *args, **kwargs):
+    def __init__(
+            self,
+            model: nn.Module,
+            learning_rate: Optional[float],
+            *args, **kwargs
+    ):
         super().__init__()
         # Set the model
         self.model = model
         self.learning_rate = learning_rate
+        # Save the model config
+        self.save_hyperparameters(ignore=['model'])
 
     def forward(self, x):
         return self.model(x)
