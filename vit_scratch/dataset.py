@@ -15,7 +15,8 @@ class FashionMNISTDataModule(pl.LightningDataModule):
             data_dir: str = "./",
             batch_size: int = 32,
             resize_shape=None,
-            num_workers: int = 8
+            num_workers: int = 8,
+            seed: int = 42
     ):
         super().__init__()
         self.data_dir = data_dir
@@ -27,6 +28,7 @@ class FashionMNISTDataModule(pl.LightningDataModule):
         self.fashion_mnist_train = None
         self.fashion_mnist_val = None
         self.fashion_mnist_test = None
+        self.seed = seed
         # Metadata
         self.n_classes = 10
         self.input_shape = (1, 28, 28)
@@ -59,8 +61,7 @@ class FashionMNISTDataModule(pl.LightningDataModule):
             stage: str,
             train_ratio: float = 0.8,
             val_ratio: float = 0.1,
-            test_ratio: float = 0.1,
-            seed: int = 42,
+            test_ratio: float = 0.1
     ):
         if stage == "fit" or stage is None:
             if not np.isclose(train_ratio + val_ratio + test_ratio, 1.0):
@@ -79,7 +80,7 @@ class FashionMNISTDataModule(pl.LightningDataModule):
             # Randomly split the dataset into train, val, and test
             self.fashion_mnist_train, self.fashion_mnist_val, self.fashion_mnist_test = random_split(
                 self.fashion_mnist_full, [num_train, num_val, num_test],
-                generator=torch.Generator().manual_seed(seed)
+                generator=torch.Generator().manual_seed(self.seed)
             )
 
     def split_dataloader_helper(self, split):
