@@ -18,7 +18,7 @@ class BaseModel(pl.LightningModule, ABC):
     def forward(self, x):
         return self.model(x)
 
-    def shared_step(self, batch, batch_idx, step):
+    def shared_step(self, batch, batch_idx, step, on_step: bool = True):
         inputs, targets = batch
         outputs = self(inputs)
         loss = nn.CrossEntropyLoss()(outputs, targets)
@@ -26,8 +26,8 @@ class BaseModel(pl.LightningModule, ABC):
         outputs_probs = torch.softmax(outputs, dim=1)
         # Get accuracy
         acc = (outputs_probs.argmax(dim=1) == targets).float().mean()
-        self.log(f'{step}_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
-        self.log(f'{step}_accuracy', acc, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log(f'{step}_loss', loss, on_step=on_step, on_epoch=True, prog_bar=True, logger=True)
+        self.log(f'{step}_accuracy', acc, on_step=on_step, on_epoch=True, prog_bar=True, logger=True)
         return loss
 
     def training_step(self, batch, batch_idx):
@@ -36,6 +36,10 @@ class BaseModel(pl.LightningModule, ABC):
 
     def validation_step(self, batch, batch_idx):
         loss = self.shared_step(batch, batch_idx, 'val')
+        return loss
+
+    def test_step(self, batch, batch_idx):
+        loss = self.shared_step(batch, batch_idx, 'test', on_step=False)
         return loss
 
     def configure_optimizers(self):
