@@ -21,6 +21,7 @@ class ViTConfig(ModelConfig):
     latent_dim: int
     n_layers: int
     n_heads: int
+    dropout: float
 
 
 @dataclass
