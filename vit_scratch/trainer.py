@@ -1,24 +1,22 @@
 import pytorch_lightning as pl
+import wandb
 from pytorch_lightning.loggers import WandbLogger, TensorBoardLogger
 
+from vit_scratch.config import ViTConfig, ResnetBaselineConfig, TrainingConfig
 from vit_scratch.dataset import FashionMNISTDataModule
-from vit_scratch.models import (
-    ViTNetwork, ResnetBaselineNetwork,
-    ViTConfig, ResnetBaselineConfig,
-    ModelWrapper
-)
+from vit_scratch.models import ViTNetwork, ResnetBaselineNetwork, ModelWrapper
 
 
 def run_experiment(
         model: ModelWrapper,
         experiment_name: str,
-        batch_size: int = 256,
-        early_stopping_patience: int = 15,
-        max_epochs: int = 100,
+        batch_size: int,
+        early_stopping_patience: int,
+        max_epochs: int,
+        seed: int,
+        wandb_logger: bool,
         data_dir: str = "./",
         accelerator: str = 'auto',
-        seed: int = 42,
-        wandb_logger: bool = False,
 ):
     fashion_mnist = FashionMNISTDataModule(data_dir, batch_size, seed=seed)
     fashion_mnist.prepare_data()
@@ -42,9 +40,10 @@ def run_experiment(
             project='ViT-Scratch',
             name=experiment_name,
         )
-        # Log hyperparameters
-        logger.experiment.config['model_type'] = model.model.__class__.__name__
-        logger.experiment.config['batch_size'] = batch_size
+        wandb.init(project='ViT-Scratch', name=experiment_name)
+        wandb.config.update({
+            'model_type': model.model.__class__.__name__
+        }, allow_val_change=True)
     else:
         logger = TensorBoardLogger(
             save_dir='tb_logs',
@@ -64,80 +63,49 @@ def run_experiment(
     # Test model
     trainer.test(model, test_loader)
 
+    # Close wandb
+    if wandb_logger:
+        wandb.finish()
+
 
 def train_test_helper(
         # Model
         model: ModelWrapper,
-        # Experiment config
-        experiment_name: str,
-        seed: int,
-        max_epochs: int,
-        wandb_logger: bool = False,
+        # Training config
+        training_config: TrainingConfig,
 ):
     run_experiment(
-        model, experiment_name,
-        seed=seed, max_epochs=max_epochs, wandb_logger=wandb_logger
+        model,
+        experiment_name=training_config.experiment_name,
+        seed=training_config.seed,
+        max_epochs=training_config.max_epochs,
+        wandb_logger=training_config.wandb_logger,
+        early_stopping_patience=training_config.early_stopping,
+        batch_size=training_config.batch_size,
     )
 
 
 def train_test_resnet(
         # Resnet config
-        resnet_size: int = 18,
-        pretrained: bool = False,
+        model_config: ResnetBaselineConfig,
         # Training config
-        learning_rate: float = 1e-3,
-        # Data config
-        num_channels: int = 1,
-        n_classes: int = 10,
-        # Experiment config
-        experiment_name: str = 'resnet_baseline',
-        seed: int = 42,
-        max_epochs: int = 100,
-        wandb_logger: bool = False,
+        training_config: TrainingConfig,
 ):
-    model_config = ResnetBaselineConfig(
-        num_channels=num_channels,
-        resnet_size=resnet_size,
-        pretrained=pretrained,
-        n_classes=n_classes,
-    )
     resnet_baseline = ResnetBaselineNetwork(model_config)
-    model = ModelWrapper(resnet_baseline, learning_rate, model_config=model_config)
+    model = ModelWrapper(
+        resnet_baseline, learning_rate=training_config.learning_rate, model_config=model_config)
     # Run experiment
-    train_test_helper(
-        model, experiment_name,
-        seed=seed, max_epochs=max_epochs, wandb_logger=wandb_logger)
+    train_test_helper(model, training_config)
 
 
 def train_test_vit(
         # ViT config
-        patch_size: int = 7,
-        latent_dim: int = 48,
-        n_layers: int = 12,
-        n_heads: int = 8,
+        model_config: ViTConfig,
         # Training config
-        learning_rate: float = 1e-3,
-        # Data config
-        input_channels: int = 1,
-        n_classes: int = 10,
-        image_size: int = 28,
-        # Experiment config
-        experiment_name: str = 'vit_custom',
-        seed: int = 42,
-        max_epochs: int = 100,
-        wandb_logger: bool = False,
+        training_config: TrainingConfig,
 ):
-    model_config = ViTConfig(
-        input_shape=(input_channels, image_size, image_size),
-        patch_size=patch_size,
-        latent_dim=latent_dim,
-        n_layers=n_layers,
-        n_heads=n_heads,
-        n_classes=n_classes,
-    )
     vit_network = ViTNetwork(model_config)
-    model = ModelWrapper(vit_network, learning_rate, model_config=model_config)
+    model = ModelWrapper(
+        vit_network, learning_rate=training_config.learning_rate, model_config=model_config)
     # Run experiment
-    train_test_helper(
-        model, experiment_name,
-        seed=seed, max_epochs=max_epochs, wandb_logger=wandb_logger)
+    train_test_helper(model, training_config)
