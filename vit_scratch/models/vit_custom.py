@@ -2,7 +2,7 @@ from typing import Tuple
 
 import torch
 
-from vit_scratch.models.config import ViTConfig
+from vit_scratch.config import ViTConfig
 
 
 class ViTEmbeddingLayer(torch.nn.Module):
@@ -28,6 +28,14 @@ class ViTEmbeddingLayer(torch.nn.Module):
         # CLS token
         self.cls_embeddings = torch.nn.Parameter(torch.rand(1, *embeddings_pos_shape[1:]))
         self.cls_embeddings_pos = torch.nn.Parameter(torch.rand(1, *embeddings_pos_shape[1:]))
+        # Initialize parameters
+        self._init_parameters()
+
+    def _init_parameters(self):
+        self.embeddings = torch.nn.init.xavier_uniform_(self.embeddings)
+        self.embeddings_pos = torch.nn.init.xavier_uniform_(self.embeddings_pos)
+        self.cls_embeddings = torch.nn.init.xavier_uniform_(self.cls_embeddings)
+        self.cls_embeddings_pos = torch.nn.init.xavier_uniform_(self.cls_embeddings_pos)
 
     def forward(self, x: torch.Tensor):
         # Reshape the x tensor in order to perform matmul with the embeddings
@@ -109,6 +117,7 @@ class TransformerEncoderLayer(torch.nn.Module):
             self,
             n_heads: int,
             latent_dim: int,
+            dropout: float,
             *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
@@ -122,9 +131,11 @@ class TransformerEncoderLayer(torch.nn.Module):
         self.layer_norm_2 = torch.nn.LayerNorm(self.latent_dim)
         # MLP Layer
         self.mlp = torch.nn.Sequential(
-            torch.nn.Linear(latent_dim, latent_dim * 2, bias=True),
-            torch.nn.ReLU(),
-            torch.nn.Linear(latent_dim * 2, latent_dim, bias=True),
+            torch.nn.Linear(latent_dim, latent_dim, bias=True),
+            torch.nn.GELU(),
+            torch.nn.Dropout(dropout),
+            torch.nn.Linear(latent_dim, latent_dim, bias=True),
+            torch.nn.Dropout(dropout),
         )
 
     def forward(self, x):
@@ -154,6 +165,7 @@ class TransformerEncoder(torch.nn.Module):
             n_layers: int,
             n_heads: int,
             latent_dim: int,
+            dropout: float,
             *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
@@ -161,7 +173,7 @@ class TransformerEncoder(torch.nn.Module):
         self.n_heads = n_heads
         self.latent_dim = latent_dim
         # Create Transformer Encoder Layers
-        self.encoder_layers = [TransformerEncoderLayer(n_heads, latent_dim) for _ in range(n_layers)]
+        self.encoder_layers = [TransformerEncoderLayer(n_heads, latent_dim, dropout) for _ in range(n_layers)]
         self.encoder = torch.nn.Sequential(*self.encoder_layers)
 
     def forward(self, x):
@@ -179,6 +191,7 @@ class ViTNetwork(torch.nn.Module):
         self.n_layers = vit_config.n_layers
         self.n_heads = vit_config.n_heads
         self.n_classes = vit_config.n_classes
+        self.dropout = vit_config.dropout
         # Compute sequence length
         self.sequence_length = self._sequence_length_factory(self.input_shape, self.patch_size)
         # Get number of channels
@@ -195,6 +208,7 @@ class ViTNetwork(torch.nn.Module):
             n_layers=self.n_layers,
             latent_dim=self.latent_dim,
             n_heads=self.n_heads,
+            dropout=self.dropout,
         )
         # MLP Head
         self.mlp_classification_head: torch.nn.Module = torch.nn.Linear(self.latent_dim, self.n_classes)
