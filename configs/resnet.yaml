@@ -1,2 +1,10 @@
-resnet_size: 18
-pretrained: false
+model_config:
+  resnet_size: 18
+  pretrained: false
+
+training_config:
+  learning_rate: 0.001
+  max_epochs: 100
+  early_stopping: 15
+  seed: 42
+  wandb_logger: false
