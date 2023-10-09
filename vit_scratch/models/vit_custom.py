@@ -54,38 +54,6 @@ class ViTEmbeddingLayer(torch.nn.Module):
         return x
 
 
-class AttentionBlock(torch.nn.Module):
-    def __init__(
-            self,
-            latent_dim: int,
-            head_dim: int,
-            *args, **kwargs
-    ):
-        super().__init__(*args, **kwargs)
-        self.latent_dim = latent_dim
-        self.head_dim = head_dim
-        # Query
-        self.q = torch.nn.Linear(self.latent_dim, self.head_dim, bias=False)
-        # Key
-        self.k = torch.nn.Linear(self.latent_dim, self.head_dim, bias=False)
-        # Value
-        self.v = torch.nn.Linear(self.latent_dim, self.head_dim, bias=False)
-
-    def forward(self, x):
-        # Compute Q, K, V
-        q, k, v = self.q(x), self.k(x), self.v(x)
-        # Matmul qk
-        x = q @ k.transpose(dim0=1, dim1=2)
-        # Rescale attention
-        x = x / torch.sqrt(torch.tensor(self.latent_dim))
-        # Compute attention mask
-        x = torch.softmax(x, dim=2)
-        # Rescale v based on the attention mask
-        x = x @ v
-        # Return the Scaled Dot-Product Attention
-        return x
-
-
 class MultiHeadAttentionBlock(torch.nn.Module):
     def __init__(
             self,
@@ -97,29 +65,44 @@ class MultiHeadAttentionBlock(torch.nn.Module):
         super().__init__(*args, **kwargs)
         self.n_heads = n_heads
         self.latent_dim = latent_dim
-        # List of heads
         if self.latent_dim % self.n_heads != 0:
-            raise ValueError(f'Latent dimension {self.latent_dim} not divisible by number of heads {self.n_heads}')
-        self.heads = torch.nn.ModuleList(
-            [AttentionBlock(latent_dim, self.latent_dim // self.n_heads) for _ in range(self.n_heads)]
-        )
+            raise ValueError(f'Latent dim {self.latent_dim} not divisible by n_heads {self.n_heads}')
+        self.head_dim = self.latent_dim // self.n_heads
+        self.dropout = dropout
+        # Multi-head QKV
+        self.qkv = torch.nn.Linear(self.latent_dim, self.head_dim * self.n_heads * 3, bias=False)
+        # Attention dropout
+        self.attn_dropout = torch.nn.Dropout(self.dropout)
         # Projection layer
         self.projection = torch.nn.Linear(self.latent_dim, self.latent_dim, bias=False)
-        # Attention dropout
-        self.dropout = dropout
-        self.attn_dropout = torch.nn.Dropout(self.dropout)
 
     def forward(self, x):
-        # Compute attention for each head
-        x = [head(x) for head in self.heads]
-        # Concatenate attention heads
-        x = torch.concat(x, dim=2)
-        # Projection
-        x = self.projection(x)
-        # Dropout attention
-        x = self.attn_dropout(x)
-        # Return the Multi-Head attention
-        return x
+        # Compute QKV for each head
+        qkv = self.qkv(x)
+        # Reshape multi head Q, K, V
+        qkv = qkv.view(x.shape[0], x.shape[1], 3, self.n_heads, self.head_dim)
+        # Permute the tensor: B x S x 3 x H x D ---> 3 x H x B x S x D
+        qkv = qkv.permute(2, 3, 0, 1, 4)
+        # Get Q, K, V
+        q, k, v = qkv[0], qkv[1], qkv[2]
+        # Matmul QK
+        attn = q @ k.transpose(dim0=-1, dim1=-2)
+        # Rescale attention
+        attn = attn / torch.sqrt(torch.tensor(self.head_dim))
+        # Compute attention mask
+        attn = torch.softmax(attn, dim=-1)
+        # Rescale v based on the attention mask
+        attn = attn @ v
+        # Reshape the attention tensor: H x B x S x D ---> B x S x H x D
+        attn = attn.permute(1, 2, 0, 3)
+        # Concatenate the multiple heads
+        attn = attn.reshape(x.shape[0], x.shape[1], self.n_heads * self.head_dim)
+        # Project attention
+        attn = self.projection(attn)
+        # Dropout layer
+        attn = self.attn_dropout(attn)
+        # Return the encoded layer
+        return attn
 
 
 class TransformerEncoderLayer(torch.nn.Module):
@@ -277,7 +260,7 @@ if __name__ == '__main__':
         n_layers=4,
         n_heads=4,
         n_classes=n_classes,
-        dropout=0.1
+        dropout=0.1,
     )
     # Create a ViT network
     vit_net = ViTNetwork(vit_config)
