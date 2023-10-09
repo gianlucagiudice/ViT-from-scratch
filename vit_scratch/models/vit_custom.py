@@ -80,7 +80,10 @@ class MultiHeadAttentionBlock(torch.nn.Module):
         # Compute QKV for each head
         qkv = self.qkv(x)
         # Reshape multi head Q, K, V
-        qkv = qkv.view(x.shape[0], x.shape[1], 3, self.n_heads, self.head_dim).permute(2, 0, 1, 3, 4)
+        qkv = qkv.view(x.shape[0], x.shape[1], 3, self.n_heads, self.head_dim)
+        # Permute the tensor: B x S x 3 x H x D ---> 3 x H x B x S x D
+        qkv = qkv.permute(2, 3, 0, 1, 4)
+        # Get Q, K, V
         q, k, v = qkv[0], qkv[1], qkv[2]
         # Matmul QK
         attn = q @ k.transpose(dim0=-1, dim1=-2)
@@ -90,8 +93,10 @@ class MultiHeadAttentionBlock(torch.nn.Module):
         attn = torch.softmax(attn, dim=-1)
         # Rescale v based on the attention mask
         attn = attn @ v
+        # Reshape the attention tensor: H x B x S x D ---> B x S x H x D
+        attn = attn.permute(1, 2, 0, 3)
         # Concatenate the multiple heads
-        attn = attn.view(x.shape[0], x.shape[1], self.n_heads * self.head_dim)
+        attn = attn.reshape(x.shape[0], x.shape[1], self.n_heads * self.head_dim)
         # Project attention
         attn = self.projection(attn)
         # Dropout layer
