@@ -54,62 +54,50 @@ class ViTEmbeddingLayer(torch.nn.Module):
         return x
 
 
-class AttentionBlock(torch.nn.Module):
-    def __init__(
-            self,
-            latent_dim: int,
-            *args, **kwargs
-    ):
-        super().__init__(*args, **kwargs)
-        self.latent_dim = latent_dim
-        # Query
-        self.q = torch.nn.Linear(self.latent_dim, self.latent_dim, bias=False)
-        # Key
-        self.k = torch.nn.Linear(self.latent_dim, self.latent_dim, bias=False)
-        # Value
-        self.v = torch.nn.Linear(self.latent_dim, self.latent_dim, bias=False)
-
-    def forward(self, x):
-        # Compute Q, K, V
-        q, k, v = self.q(x), self.k(x), self.v(x)
-        # Matmul qk
-        x = q @ k.transpose(dim0=1, dim1=2)
-        # Rescale attention
-        x = x / torch.sqrt(torch.tensor(self.latent_dim))
-        # Compute attention mask
-        x = torch.softmax(x, dim=2)
-        # Rescale v based on the attention mask
-        x = x @ v
-        # Return the Scaled Dot-Product Attention
-        return x
-
-
 class MultiHeadAttentionBlock(torch.nn.Module):
     def __init__(
             self,
             n_heads: int,
             latent_dim: int,
+            dropout: float,
             *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
         self.n_heads = n_heads
         self.latent_dim = latent_dim
-        # List of heads
-        self.heads = torch.nn.ModuleList(
-            [AttentionBlock(self.latent_dim) for _ in range(self.n_heads)]
-        )
+        if self.latent_dim % self.n_heads != 0:
+            raise ValueError(f'Latent dim {self.latent_dim} not divisible by n_heads {self.n_heads}')
+        self.head_dim = self.latent_dim // self.n_heads
+        self.dropout = dropout
+        # Multi-head QKV
+        self.qkv = torch.nn.Linear(self.latent_dim, self.head_dim * self.n_heads * 3, bias=False)
+        # Attention dropout
+        self.attn_dropout = torch.nn.Dropout(self.dropout)
         # Projection layer
-        self.projection = torch.nn.Linear(self.latent_dim * self.n_heads, self.latent_dim, bias=False)
+        self.projection = torch.nn.Linear(self.latent_dim, self.latent_dim, bias=False)
 
     def forward(self, x):
-        # Compute attention for each head
-        x = [head(x) for head in self.heads]
-        # Concatenate attention heads
-        x = torch.concat(x, dim=2)
-        # Projection
-        x = self.projection(x)
-        # Return the Multi-Head attention
-        return x
+        # Compute QKV for each head
+        qkv = self.qkv(x)
+        # Reshape multi head Q, K, V
+        qkv = qkv.view(x.shape[0], x.shape[1], 3, self.n_heads, self.head_dim).permute(2, 0, 1, 3, 4)
+        q, k, v = qkv[0], qkv[1], qkv[2]
+        # Matmul QK
+        attn = q @ k.transpose(dim0=-1, dim1=-2)
+        # Rescale attention
+        attn = attn / torch.sqrt(torch.tensor(self.head_dim))
+        # Compute attention mask
+        attn = torch.softmax(attn, dim=-1)
+        # Rescale v based on the attention mask
+        attn = attn @ v
+        # Concatenate the multiple heads
+        attn = attn.view(x.shape[0], x.shape[1], self.n_heads * self.head_dim)
+        # Project attention
+        attn = self.projection(attn)
+        # Dropout layer
+        attn = self.attn_dropout(attn)
+        # Return the encoded layer
+        return attn
 
 
 class TransformerEncoderLayer(torch.nn.Module):
@@ -123,10 +111,11 @@ class TransformerEncoderLayer(torch.nn.Module):
         super().__init__(*args, **kwargs)
         self.n_heads = n_heads
         self.latent_dim = latent_dim
+        self.dropout = dropout
         # Layer norm 1
         self.layer_norm_1 = torch.nn.LayerNorm(self.latent_dim)
         # Multi-Head Attention
-        self.multi_head_attention = MultiHeadAttentionBlock(self.n_heads, self.latent_dim)
+        self.multi_head_attention = MultiHeadAttentionBlock(self.n_heads, self.latent_dim, self.dropout)
         # Layer Norm 2
         self.layer_norm_2 = torch.nn.LayerNorm(self.latent_dim)
         # MLP Layer
@@ -173,7 +162,8 @@ class TransformerEncoder(torch.nn.Module):
         self.n_heads = n_heads
         self.latent_dim = latent_dim
         # Create Transformer Encoder Layers
-        self.encoder_layers = [TransformerEncoderLayer(n_heads, latent_dim, dropout) for _ in range(n_layers)]
+        self.encoder_layers = [TransformerEncoderLayer(n_heads, latent_dim, dropout)
+                               for _ in range(n_layers)]
         self.encoder = torch.nn.Sequential(*self.encoder_layers)
 
     def forward(self, x):
@@ -263,8 +253,9 @@ if __name__ == '__main__':
         patch_size=7,
         latent_dim=32,
         n_layers=4,
-        n_heads=3,
+        n_heads=4,
         n_classes=n_classes,
+        dropout=0.1,
     )
     # Create a ViT network
     vit_net = ViTNetwork(vit_config)
