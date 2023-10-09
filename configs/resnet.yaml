@@ -7,4 +7,5 @@ training_config:
   max_epochs: 100
   early_stopping: 15
   seed: 42
+  batch_size: 512
   wandb_logger: false
