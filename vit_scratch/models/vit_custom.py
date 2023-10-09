@@ -58,16 +58,18 @@ class AttentionBlock(torch.nn.Module):
     def __init__(
             self,
             latent_dim: int,
+            head_dim: int,
             *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
         self.latent_dim = latent_dim
+        self.head_dim = head_dim
         # Query
-        self.q = torch.nn.Linear(self.latent_dim, self.latent_dim, bias=False)
+        self.q = torch.nn.Linear(self.latent_dim, self.head_dim, bias=False)
         # Key
-        self.k = torch.nn.Linear(self.latent_dim, self.latent_dim, bias=False)
+        self.k = torch.nn.Linear(self.latent_dim, self.head_dim, bias=False)
         # Value
-        self.v = torch.nn.Linear(self.latent_dim, self.latent_dim, bias=False)
+        self.v = torch.nn.Linear(self.latent_dim, self.head_dim, bias=False)
 
     def forward(self, x):
         # Compute Q, K, V
@@ -89,17 +91,23 @@ class MultiHeadAttentionBlock(torch.nn.Module):
             self,
             n_heads: int,
             latent_dim: int,
+            dropout: float,
             *args, **kwargs
     ):
         super().__init__(*args, **kwargs)
         self.n_heads = n_heads
         self.latent_dim = latent_dim
         # List of heads
+        if self.latent_dim % self.n_heads != 0:
+            raise ValueError(f'Latent dimension {self.latent_dim} not divisible by number of heads {self.n_heads}')
         self.heads = torch.nn.ModuleList(
-            [AttentionBlock(self.latent_dim) for _ in range(self.n_heads)]
+            [AttentionBlock(latent_dim, self.latent_dim // self.n_heads) for _ in range(self.n_heads)]
         )
         # Projection layer
-        self.projection = torch.nn.Linear(self.latent_dim * self.n_heads, self.latent_dim, bias=False)
+        self.projection = torch.nn.Linear(self.latent_dim, self.latent_dim, bias=False)
+        # Attention dropout
+        self.dropout = dropout
+        self.attn_dropout = torch.nn.Dropout(self.dropout)
 
     def forward(self, x):
         # Compute attention for each head
@@ -108,6 +116,8 @@ class MultiHeadAttentionBlock(torch.nn.Module):
         x = torch.concat(x, dim=2)
         # Projection
         x = self.projection(x)
+        # Dropout attention
+        x = self.attn_dropout(x)
         # Return the Multi-Head attention
         return x
 
@@ -123,10 +133,11 @@ class TransformerEncoderLayer(torch.nn.Module):
         super().__init__(*args, **kwargs)
         self.n_heads = n_heads
         self.latent_dim = latent_dim
+        self.dropout = dropout
         # Layer norm 1
         self.layer_norm_1 = torch.nn.LayerNorm(self.latent_dim)
         # Multi-Head Attention
-        self.multi_head_attention = MultiHeadAttentionBlock(self.n_heads, self.latent_dim)
+        self.multi_head_attention = MultiHeadAttentionBlock(self.n_heads, self.latent_dim, self.dropout)
         # Layer Norm 2
         self.layer_norm_2 = torch.nn.LayerNorm(self.latent_dim)
         # MLP Layer
@@ -173,7 +184,8 @@ class TransformerEncoder(torch.nn.Module):
         self.n_heads = n_heads
         self.latent_dim = latent_dim
         # Create Transformer Encoder Layers
-        self.encoder_layers = [TransformerEncoderLayer(n_heads, latent_dim, dropout) for _ in range(n_layers)]
+        self.encoder_layers = [TransformerEncoderLayer(n_heads, latent_dim, dropout)
+                               for _ in range(n_layers)]
         self.encoder = torch.nn.Sequential(*self.encoder_layers)
 
     def forward(self, x):
@@ -263,8 +275,9 @@ if __name__ == '__main__':
         patch_size=7,
         latent_dim=32,
         n_layers=4,
-        n_heads=3,
+        n_heads=4,
         n_classes=n_classes,
+        dropout=0.1
     )
     # Create a ViT network
     vit_net = ViTNetwork(vit_config)
