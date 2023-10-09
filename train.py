@@ -1,7 +1,8 @@
 import fire
 
-from vit_scratch.trainer import train_test_vit, train_test_resnet
-from vit_scratch.config import ViTConfig, ResnetBaselineConfig, TrainingConfig, ModelType, parse_config
+from vit_scratch.trainer import train_test_vit
+from vit_scratch.config import (ViTConfig, ResnetBaselineConfig,
+                                TrainingConfig, ModelType, parse_config)
 
 
 def train_from_config(
@@ -29,15 +30,17 @@ def train_from_config(
 
     match model_type:
         case ModelType.vit_custom:
-            train_test_vit(
-                model_config=ViTConfig(**model_config),
-                training_config=training_config)
+            model_config = ViTConfig(**model_config)
         case ModelType.resnet_baseline:
-            train_test_resnet(
-                model_config=ResnetBaselineConfig(**model_config),
-                training_config=training_config)
+            model_config = ResnetBaselineConfig(**model_config)
         case _:
             raise ValueError(f"Model type {model_type} not supported")
+
+    # Print model config
+    print(f'Model config: {model_config}')
+
+    # Start training
+    train_test_vit(model_config=model_config, training_config=training_config)
 
 
 if __name__ == '__main__':
