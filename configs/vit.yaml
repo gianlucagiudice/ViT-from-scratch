@@ -10,7 +10,7 @@ model_config:
 training_config:
   learning_rate: 0.001
   max_epochs: 100
-  early_stopping: 15
+  early_stopping: 30
   seed: 42
   batch_size: 512
   wandb_logger: false

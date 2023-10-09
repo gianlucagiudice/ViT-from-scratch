@@ -1,6 +1,8 @@
 model_config:
   resnet_size: 18
   pretrained: false
+  n_classes: 10
+  num_channels: 1
 
 training_config:
   learning_rate: 0.001
