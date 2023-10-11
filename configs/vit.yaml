@@ -1,6 +1,6 @@
 model_config:
   patch_size: 7
-  latent_dim: 480
+  latent_dim: 320
   n_layers: 14
   n_heads: 10
   dropout: 0.1
