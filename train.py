@@ -6,7 +6,7 @@ from vit_scratch.config import (ViTConfig, ResnetBaselineConfig,
 
 
 def train_from_config(
-        config_path: str,
+        config_path: str = 'configs/vit_custom.yaml',
         model_type: str = 'vit_custom',
         experiment_name: str = None,
 ):
