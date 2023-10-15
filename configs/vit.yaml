@@ -1,16 +1,16 @@
 model_config:
   patch_size: 7
   latent_dim: 320
-  n_layers: 14
+  n_layers: 12
   n_heads: 10
-  dropout: 0.1
+  dropout: 0.3
   input_shape: [1, 28, 28]
   n_classes: 10
 
 training_config:
   learning_rate: 0.001
   max_epochs: 100
-  early_stopping: 30
+  early_stopping: 20
   seed: 42
   batch_size: 512
   wandb_logger: false
