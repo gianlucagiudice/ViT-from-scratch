@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "vit_scratch"
+version = "0.1"
+description = "An image is worth 16x16 words."
+authors = [
+    {name = "Gianluca Giudice", email = "gianlu.giudice@gmail.com"},
+]
+readme = "README.md"
+
+requires-python = ">=3.10"
+
+dependencies = [
+    "torch",
+    "torchvision",
+    "pytorch-lightning",
+    "fire",
+    "tensorboard",
+    "wandb",
+]
+
+[tool.setuptools.packages.find]
+include = ["vit_scratch*"]
