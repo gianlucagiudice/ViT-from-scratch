@@ -1,9 +1,9 @@
 # Visual Transformer (ViT) from scratch: Implementing  "An Image is Worth 16x16 Words"
 
-This repository delves deep into the transformer architecture, focusing on its use in computer vision
+This repository explores the transformer architecture, focusing on its use in computer vision.
 The implementation is based on the
 paper ["An Image is Worth 16x16 Words"](https://arxiv.org/abs/2010.11929) and has been crafted entirely from scratch for
-educational purposes. Additionally, the performance of the Visual Transformer has been compared with a ResNet18 model to
+educational purposes. Additionally, the performance of the Visual Transformer has been compared to a ResNet18 model to
 provide a comprehensive evaluation of its capabilities.
 
 ## 🌐 Introduction to Transformer Architecture
