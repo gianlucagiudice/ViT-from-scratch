@@ -1,4 +1,4 @@
-import lightning.pytorch as pl
+import pytorch_lightning as pl
 import numpy as np
 import torch
 from torch.utils.data import random_split, DataLoader
@@ -83,7 +83,8 @@ class FashionMNISTDataModule(pl.LightningDataModule):
             )
 
     def split_dataloader_helper(self, split):
-        return DataLoader(split, batch_size=self.batch_size, num_workers=self.num_workers)
+        return DataLoader(split, batch_size=self.batch_size,
+                          num_workers=self.num_workers, persistent_workers=True)
 
     def train_dataloader(self):
         return self.split_dataloader_helper(self.fashion_mnist_train)
@@ -93,11 +94,6 @@ class FashionMNISTDataModule(pl.LightningDataModule):
 
     def test_dataloader(self):
         return self.split_dataloader_helper(self.fashion_mnist_test)
-
-    def plot_image(self, idx):
-        import matplotlib.pyplot as plt
-        plt.imshow(self.fashion_mnist_full[idx][0].squeeze(), cmap='gray')
-        plt.show()
 
 
 if __name__ == '__main__':
