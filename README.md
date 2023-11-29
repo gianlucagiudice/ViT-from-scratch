@@ -45,7 +45,7 @@ Below is the original image depicting the ViT architecture:
 
 The train.py script makes it easy to train the ViT model and takes command-line arguments to set model configurations.
 By default, the script trains the ViT model using the hyperparameters specified
-in `configs/vit_custom.yaml`.
+in `configs/vit/vit_custom.yaml`.
 
 To train the models using the provided scripts, follow the steps below:
 
@@ -58,17 +58,17 @@ To train the models using the provided scripts, follow the steps below:
 
 Parameters:
 
-- `--config_path`: Specifies the path to the YAML configuration file. The default is `configs/vit_custom.yaml`.
+- `--config_path`: Specifies the path to the YAML configuration file. The default is `configs/vit/vit_custom.yaml`.
 - `--model_type`: Indicates the type of model to train. By default, it's set to `vit_custom`.
 
 ### Model Configuration
 
 Both models come with dedicated configuration files to easily modify the training and model parameters. These YAML files
 allow for a straightforward way to adjust hyperparameters without diving into the code. To customize the model or
-training configurations open the respective configuration file (`configs/vit.yaml` for ViT and `configs/resnet.yaml` for
+training configurations open the respective configuration file (`configs/vit/vit.yaml` for ViT and `configs/vit/resnet.yaml` for
 ResNet).
 
-#### Visual Transformer Configuration - `configs/vit.yaml`
+#### Visual Transformer Configuration - `configs/vit/vit.yaml`
 
 **model_config**:
 
@@ -78,7 +78,7 @@ ResNet).
 - `n_heads`: Number of attention heads in the multi-head self-attention mechanism.
 - `dropout`: Dropout rate for regularization.
 
-#### ResNet Configuration - `configs/resnet.yaml`
+#### ResNet Configuration - `configs/vit/resnet.yaml`
 
 **model_config**:
 
@@ -121,7 +121,7 @@ models. To utilize it, provide paths to the appropriate YAML configuration files
 Execute the following command to initiate the training and testing process for both models:
 
 ```
-python train_comparison.py --vit_config_path configs/vit.yaml --resnet_config_path configs/resnet.yaml
+python train_comparison.py --vit_config_path configs/vit/vit.yaml --resnet_config_path configs/vit/resnet.yaml
 ```
 
 During this process, both models will be trained and subsequently evaluated on the Fashion MNIST dataset. Comprehensive

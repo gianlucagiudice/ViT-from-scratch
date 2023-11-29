@@ -98,7 +98,7 @@ class FashionMNISTDataModule(pl.LightningDataModule):
 
 if __name__ == '__main__':
     # Create the dataset
-    fashion_mnist_data_module = FashionMNISTDataModule('../')
+    fashion_mnist_data_module = FashionMNISTDataModule('../../')
     # Prepare the data
     fashion_mnist_data_module.prepare_data()
     fashion_mnist_data_module.setup(stage='fit')

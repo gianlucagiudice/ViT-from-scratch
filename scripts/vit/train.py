@@ -1,12 +1,12 @@
 import fire
 
-from vit_scratch.trainer import train_test_vit
-from vit_scratch.config import (ViTConfig, ResnetBaselineConfig,
-                                TrainingConfig, ModelType, parse_config)
+from transformers_scratch.vit_scratch.trainer import train_test_vit
+from transformers_scratch.vit_scratch.config import (ViTConfig, ResnetBaselineConfig,
+                                                     TrainingConfig, ModelType, parse_config)
 
 
 def train_from_config(
-        config_path: str = 'configs/vit_custom.yaml',
+        config_path: str = 'configs/vit/vit_custom.yaml',
         model_type: str = 'vit_custom',
         experiment_name: str = None,
 ):

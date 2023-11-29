@@ -1,6 +1,6 @@
 import torch
 
-from vit_scratch.config import ResnetBaselineConfig
+from transformers_scratch.vit_scratch.config import ResnetBaselineConfig
 
 
 class ResnetBaselineNetwork(torch.nn.Module):
