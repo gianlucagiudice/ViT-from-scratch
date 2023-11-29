@@ -1,3 +1,3 @@
 from .resnet_baseline import ResnetBaselineNetwork
-from .vit_custom import ViTNetwork
+from .vit_model import ViTNetwork
 from .wrapper_model import ModelWrapper
