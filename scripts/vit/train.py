@@ -1,8 +1,8 @@
 import fire
 
-from transformers_scratch.vit_scratch.trainer import train_test_vit
-from transformers_scratch.vit_scratch.config import (ViTConfig, ResnetBaselineConfig,
-                                                     TrainingConfig, ModelType, parse_config)
+from transformer_scratch.vit_scratch.trainer import train_test_vit
+from transformer_scratch.vit_scratch.config import (ViTConfig, ResnetBaselineConfig,
+                                                    TrainingConfig, ModelType, parse_config)
 
 
 def train_from_config(

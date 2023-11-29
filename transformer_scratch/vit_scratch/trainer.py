@@ -2,9 +2,9 @@ import pytorch_lightning as pl
 import wandb
 from pytorch_lightning.loggers import WandbLogger, TensorBoardLogger
 
-from transformers_scratch.vit_scratch.config import ViTConfig, ResnetBaselineConfig, TrainingConfig
-from transformers_scratch.vit_scratch.dataset import FashionMNISTDataModule
-from transformers_scratch.vit_scratch.models import ViTNetwork, ResnetBaselineNetwork, ModelWrapper
+from transformer_scratch.vit_scratch.config import ViTConfig, ResnetBaselineConfig, TrainingConfig
+from transformer_scratch.vit_scratch.dataset import FashionMNISTDataModule
+from transformer_scratch.vit_scratch.models import ViTNetwork, ResnetBaselineNetwork, ModelWrapper
 
 
 def run_experiment(

@@ -2,7 +2,7 @@ from typing import Tuple
 
 import torch
 
-from transformers_scratch.vit_scratch.config import ViTConfig
+from transformer_scratch.vit_scratch.config import ViTConfig
 
 
 class ViTEmbeddingLayer(torch.nn.Module):

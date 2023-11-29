@@ -1,7 +1,7 @@
 import fire
 
-from transformers_scratch.vit_scratch.config import parse_config, TrainingConfig, ResnetBaselineConfig, ViTConfig
-from transformers_scratch.vit_scratch.trainer import train_test_vit, train_test_resnet
+from transformer_scratch.vit_scratch.config import parse_config, TrainingConfig, ResnetBaselineConfig, ViTConfig
+from transformer_scratch.vit_scratch.trainer import train_test_vit, train_test_resnet
 
 
 def main(vit_config_path: str, resnet_config_path: str, n_seeds: int = 5):
