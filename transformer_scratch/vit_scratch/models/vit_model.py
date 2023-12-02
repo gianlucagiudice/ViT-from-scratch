@@ -13,9 +13,8 @@ class ViTEmbeddingLayer(EmbeddingLayer):
             latent_dim: int,
             n_channels: int,
             patch_size: int,
-            *args, **kwargs
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__()
         self.sequence_length = sequence_length
         self.latent_dim = latent_dim
         self.n_channels = n_channels
@@ -56,7 +55,6 @@ class ViTEmbeddingLayer(EmbeddingLayer):
 
 
 class ViTNetwork(torch.nn.Module):
-
     def __init__(self, vit_config: ViTConfig):
         super().__init__()
         self.input_shape = vit_config.input_shape

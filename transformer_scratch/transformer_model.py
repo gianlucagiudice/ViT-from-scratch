@@ -11,9 +11,8 @@ class MultiHeadAttentionBlock(torch.nn.Module):
             n_heads: int,
             latent_dim: int,
             dropout: float,
-            *args, **kwargs
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__()
         self.n_heads = n_heads
         self.latent_dim = latent_dim
         if self.latent_dim % self.n_heads != 0:
@@ -62,9 +61,8 @@ class TransformerEncoderLayer(torch.nn.Module):
             n_heads: int,
             latent_dim: int,
             dropout: float,
-            *args, **kwargs
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__()
         self.n_heads = n_heads
         self.latent_dim = latent_dim
         self.dropout = dropout
@@ -111,17 +109,25 @@ class TransformerEncoder(torch.nn.Module):
             n_heads: int,
             latent_dim: int,
             dropout: float,
-            *args, **kwargs
     ):
-        super().__init__(*args, **kwargs)
+        super().__init__()
         self.n_layers = n_layers
         self.n_heads = n_heads
         self.latent_dim = latent_dim
         # Create Transformer Encoder Layers
-        self.encoder_layers = [TransformerEncoderLayer(n_heads, latent_dim, dropout)
-                               for _ in range(n_layers)]
-        self.encoder = torch.nn.Sequential(*self.encoder_layers)
+        self.encoder = torch.nn.Sequential(*[
+            TransformerEncoderLayer(n_heads, latent_dim, dropout)
+            for _ in range(n_layers)
+        ])
 
     def forward(self, x):
         x = self.encoder(x)
         return x
+
+
+class TransformerNetwork:
+    pass
+
+
+if __name__ == '__main__':
+    pass
