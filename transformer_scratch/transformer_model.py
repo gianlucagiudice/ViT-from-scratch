@@ -2,7 +2,49 @@ import torch
 
 
 class EmbeddingLayer(torch.nn.Module):
-    pass
+    def __init__(
+            self,
+            num_embeddings: int,
+            sequence_length: int,
+            latent_dim: int,
+    ):
+        super().__init__()
+        self.num_embeddings = num_embeddings
+        self.sequence_length = sequence_length
+        self.latent_dim = latent_dim
+        # Create embedding parameters: (N x D)
+        self.embeddings = torch.nn.Parameter(torch.rand((self.num_embeddings, self.latent_dim)))
+        self.embeddings_pos = torch.zeros((self.sequence_length, self.latent_dim))
+        # Initialize parameters
+        self._init_parameters()
+
+    def _init_parameters(self):
+        # Embeddings
+        self.embeddings = torch.nn.init.xavier_uniform_(self.embeddings)
+
+        # Positional Embeddings
+        # P E(pos,2i)   = sin(pos/10000^(2i/dmodel))
+        # P E(pos,2i+1) = cos(pos/10000^(2i/dmodel))
+        pos_ids = torch.arange(self.sequence_length).unsqueeze(1).repeat(1, self.latent_dim)
+        emb_ids = torch.arange(self.latent_dim).unsqueeze(0).repeat(self.sequence_length, 1)
+
+        emb_tmp = pos_ids / (10_000 ** (2 * emb_ids / self.latent_dim))
+
+        even_len = self.latent_dim // 2 + self.latent_dim % 2
+        odd_len = self.latent_dim // 2
+
+        even_pos = torch.sin(emb_tmp)[:, :even_len]
+        odd_pos = torch.cos(emb_tmp)[:, :odd_len]
+
+        self.embeddings_pos = torch.empty((self.sequence_length, self.latent_dim))
+        self.embeddings_pos[:, torch.arange(even_len) * 2] = even_pos
+        self.embeddings_pos[:, (torch.arange(odd_len) * 2) + 1] = odd_pos
+
+    def forward(self, x):
+        # Get the embeddings indexed at the token ID
+        x = self.embeddings[x]
+        x = x + self.embeddings_pos
+        return x
 
 
 class MultiHeadAttentionBlock(torch.nn.Module):
